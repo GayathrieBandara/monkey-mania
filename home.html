@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Catch the Banana! 🍌</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@500;700&display=swap" rel="stylesheet" />
+
+    <link rel="stylesheet" href="styles/home.css">
+</head>
+
+<body>
+    <div class="overlay"></div>
+
+    <div class="card" id="welcomeCard" style="display:none;">
+        <h2 id="welcomeMsg">Welcome! 🎉</h2>
+        <p>You’re now logged into Monkey Mania!</p>
+    </div>
+
+    <header>
+        <nav class="nav-bar">
+            <ul>
+                <li><a href="#">Home</a></li>
+                <li><a href="game.html">Single Player</a></li>
+                <li><a href="#">Help</a></li>
+                <li><a href="#">About</a></li>
+            </ul>
+        </nav>
+    </header>
+
+    <button id="musicToggle">🔊 Music On</button>
+
+    <main class="menu">
+        <div class="menu-content">
+            <div class="monkey">
+                <img src="https://cdn.pixabay.com/photo/2017/01/31/17/32/monkey-2029536_1280.png" alt="Monkey" />
+            </div>
+
+            <div class="menu-box">
+                <h1>🐵 Catch the Banana! 🍌</h1>
+                <p>Catch bananas, earn points, and avoid the rotten ones — fun, simple, and wild!</p>
+
+                <div class="buttons">
+                    <button class="btn yellow" id="single">🎮 Single Player</button>
+                    <button class="btn green" id="leaderboard">🏆 Leaderboard</button>
+                    <button class="btn gray" id="help">❓ Help</button>
+                    <button class="btn red" id="logout">🚪 Logout</button>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <audio id="clickSound" src="https://commondatastorage.googleapis.com/codeskulptor-assets/week7-bounce.m4a"></audio>
+    <audio id="bgMusic" src="https://commondatastorage.googleapis.com/codeskulptor-assets/sounddogs/soundtrack.mp3"
+        loop></audio>
+
+    <script type="module">
+        import { auth, db } from './js/firebase-config.js';
+        import { onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+        import { doc, getDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+
+        document.addEventListener("DOMContentLoaded", () => {
+            // Auth Check
+            onAuthStateChanged(auth, async (user) => {
+                if (!user) {
+                    window.location.href = "index.html";
+                } else {
+                    // Fetch username
+                    try {
+                        const userDoc = await getDoc(doc(db, "users", user.uid));
+                        if (userDoc.exists()) {
+                            const username = userDoc.data().username;
+                            document.getElementById('welcomeMsg').textContent = `Welcome, ${username} 🎉`;
+                        }
+                        document.getElementById('welcomeCard').style.display = 'block';
+                    } catch (e) {
+                        console.error("Error fetching user", e);
+                    }
+                }
+            });
+
+            const clickSound = document.getElementById("clickSound");
+            const bgMusic = document.getElementById("bgMusic");
+            const musicToggle = document.getElementById("musicToggle");
+            let musicOn = true;
+
+            bgMusic.volume = 0.4;
+            bgMusic.play().catch(() => {
+                console.log("Autoplay blocked — click Music On to play.");
+            });
+
+            musicToggle.addEventListener("click", () => {
+                if (musicOn) {
+                    bgMusic.pause();
+                    musicToggle.textContent = "🔈 Music Off";
+                } else {
+                    bgMusic.play();
+                    musicToggle.textContent = "🔊 Music On";
+                }
+                musicOn = !musicOn;
+            });
+
+            document.querySelectorAll(".btn").forEach(button => {
+                button.addEventListener("click", () => {
+                    clickSound.currentTime = 0;
+                    clickSound.play();
+                });
+            });
+
+            document.getElementById("single").addEventListener("click", () => {
+                window.location.href = 'game.html';
+            });
+            document.getElementById("leaderboard").addEventListener("click", () => {
+                window.location.href = 'leaderboard.html';
+            });
+            document.getElementById("help").addEventListener("click", () => {
+                alert("❓ Tip: Catch bananas and avoid rotten ones!");
+            });
+            document.getElementById("logout").addEventListener("click", () => {
+                signOut(auth).then(() => {
+                    window.location.href = 'index.html';
+                });
+            });
+        });
+    </script>
+</body>
+
+</html>
