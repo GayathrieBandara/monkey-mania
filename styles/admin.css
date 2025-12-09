@@ -1,0 +1,65 @@
+        body {
+            font-family: 'Poppins', sans-serif;
+            background: url('https://images.unsplash.com/photo-1501785888041-af3ef285b470?auto=format&fit=crop&w=1600&q=80') center/cover;
+            color: #fff;
+            text-align: center;
+            padding: 50px;
+        }
+
+        h1 {
+            margin-bottom: 20px;
+        }
+
+        form {
+            margin-bottom: 30px;
+        }
+
+        input {
+            padding: 10px;
+            width: 300px;
+        }
+
+        button {
+            padding: 10px 20px;
+            background: #f6c90e;
+            border: none;
+            cursor: pointer;
+        }
+
+        table {
+            margin: 20px auto;
+            border-collapse: collapse;
+            width: 80%;
+            background: rgba(0, 0, 0, 0.7);
+        }
+
+        th,
+        td {
+            padding: 10px;
+            border: 1px solid #fff;
+            word-break: break-all;
+        }
+
+        th {
+            background: #f6c90e;
+            color: #000;
+        }
+
+        .delete-btn {
+            background: #ff0000;
+            color: #fff;
+        }
+
+        .clear-btn {
+            background: #ff6b6b;
+            color: white;
+            padding: 12px 24px;
+            margin-top: 20px;
+        }
+
+        a {
+            color: #f6c90e;
+            text-decoration: none;
+            display: block;
+            margin-top: 20px;
+        }

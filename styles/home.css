@@ -1,0 +1,224 @@
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: 'Poppins', sans-serif;
+    color: #4a2c00;
+    background: linear-gradient(to bottom, #5ab04b, #1e5631);
+    background-image: url('https://images.unsplash.com/photo-1501785888041-af3ef285b470?auto=format&fit=crop&w=1600&q=80');
+    background-size: cover;
+    background-repeat: no-repeat;
+    background-position: center center;
+    background-attachment: fixed;
+    height: 100vh;
+    overflow: hidden;
+}
+
+.overlay {
+    background: rgba(0, 0, 0, 0.35);
+    position: fixed;
+    inset: 0;
+    z-index: 1;
+}
+
+header {
+    background: rgba(255, 220, 90, 0.9);
+    box-shadow: 0 3px 10px rgba(0, 0, 0, 0.2);
+    padding: 10px 0;
+    position: fixed;
+    top: 0;
+    width: 100%;
+    z-index: 10;
+}
+
+.nav-bar ul {
+    display: flex;
+    justify-content: center;
+    list-style: none;
+    gap: 30px;
+}
+
+.nav-bar li a {
+    text-decoration: none;
+    color: #4a2c00;
+    font-weight: 600;
+    font-size: 1rem;
+    transition: color 0.3s;
+}
+
+.nav-bar li a:hover {
+    color: #d28400;
+}
+
+#musicToggle {
+    position: fixed;
+    top: 15px;
+    right: 20px;
+    z-index: 20;
+    background: rgba(255, 220, 90, 0.9);
+    border: none;
+    border-radius: 20px;
+    padding: 8px 15px;
+    font-weight: bold;
+    cursor: pointer;
+    box-shadow: 0 3px 6px rgba(0, 0, 0, 0.2);
+    transition: all 0.3s;
+}
+
+#musicToggle:hover {
+    background: #f6c90e;
+    transform: scale(1.1);
+}
+
+.menu {
+    position: relative;
+    z-index: 2;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+    padding-top: 80px;
+}
+
+.menu-content {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(34, 85, 30, 0.95);
+    border-radius: 25px;
+    padding: 60px 80px;
+    gap: 50px;
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.4);
+    animation: fadeIn 1.2s ease-in-out;
+    flex-direction: column;
+    position: relative;
+    overflow: hidden;
+}
+
+.menu-content::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: url('https://images.unsplash.com/photo-1506744038136-46273834b3fb?auto=format&fit=crop&w=600&q=80');
+    background-size: cover;
+    background-repeat: no-repeat;
+    background-position: center;
+    opacity: 0.15;
+    border-radius: 25px;
+    z-index: 0;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.monkey img {
+    width: 260px;
+    animation: bounce 2s infinite ease-in-out;
+}
+
+@keyframes bounce {
+
+    0%,
+    100% {
+        transform: translateY(0);
+    }
+
+    50% {
+        transform: translateY(-15px);
+    }
+}
+
+.menu-box {
+    text-align: center;
+    max-width: 450px;
+    position: relative;
+    z-index: 1;
+}
+
+.menu-box h1 {
+    font-size: 2.8em;
+    margin-bottom: 15px;
+    color: #fff7a8;
+    text-shadow: 2px 2px #2c4a19;
+}
+
+.menu-box p {
+    font-size: 1.2em;
+    color: #d9f3c1;
+    margin-bottom: 30px;
+}
+
+.buttons {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+.btn {
+    border: none;
+    border-radius: 30px;
+    padding: 15px 30px;
+    width: 280px;
+    margin: 0 auto;
+    font-size: 1.2em;
+    font-weight: bold;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.15);
+}
+
+.btn:hover {
+    transform: scale(1.08);
+}
+
+.yellow {
+    background: #f6c90e;
+    color: #4a2c00;
+}
+
+.green {
+    background: #9ccf31;
+    color: #2e4a00;
+}
+
+.blue {
+    background: #6eb5ff;
+    color: #002f6c;
+}
+
+.gray {
+    background: #ffd966;
+    color: #2e4a00;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.25);
+    border: 2px solid #ffe57f;
+}
+
+.red {
+    background: #ff6b6b;
+    color: white;
+}
+
+.card {
+    position: absolute;
+    top: 80px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: rgba(255, 255, 255, 0.9);
+    padding: 10px 20px;
+    border-radius: 10px;
+    z-index: 20;
+    text-align: center;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+}

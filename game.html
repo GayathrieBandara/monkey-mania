@@ -1,0 +1,328 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Monkey Mania - Catch the Banana!</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="styles/game.css">
+</head>
+
+<body>
+
+    <div class="header">
+        <div class="user-info" id="usernameDisplay">🐒 Loading...</div>
+        <a href="home.html"><button class="back-btn">← Back to Menu</button></a>
+    </div>
+
+    <div class="container">
+        <h1>🍌 Monkey Mania 🍌</h1>
+
+        <div class="scoreboard">
+            <div class="score-item">Score: <span id="score">0</span></div>
+            <div class="score-item">Catches: <span id="catches">0</span>/5</div>
+        </div>
+
+        <div id="game-area" class="game-area">
+            <div id="monkey">🐒</div>
+
+            <div class="game-over" id="gameOverScreen">
+                <p>Game Over!</p>
+                <p>Score: <span id="finalScore">0</span></p>
+                <div class="btn-group">
+                    <button id="restartBtn">🔄 Play Again</button>
+                    <button id="leaderboardBtn" style="background: #4fc3f7; color: white;">🏆 Menu</button>
+                </div>
+            </div>
+        </div>
+
+        <div class="controls-hint">⌨️ Arrow Keys • 📱 Swipe • 🖱️ Mouse Move</div>
+    </div>
+
+    <!-- Puzzle Modal -->
+    <div id="puzzle-modal" class="modal hidden">
+        <div class="modal-panel">
+            <h2>🎯 Solve the Puzzle!</h2>
+            <p style="color: #666; margin-bottom: 10px;">Get +10 Bonus Points</p>
+            <img id="puzzle-img" src="" alt="Puzzle">
+            <input type="text" inputmode="numeric" id="puzzle-answer" placeholder="Enter your answer">
+            <div class="modal-actions">
+                <button id="puzzle-submit">✓ Submit</button>
+                <button id="puzzle-skip" class="btn-secondary">Skip</button>
+            </div>
+            <div id="puzzle-msg"></div>
+        </div>
+    </div>
+
+    <audio id="bgMusic" loop autoplay>
+        <source src="https://commondatastorage.googleapis.com/codeskulptor-assets/sounddogs/soundtrack.mp3"
+            type="audio/mp3">
+    </audio>
+
+    <script type="module">
+        import { auth, db } from './js/firebase-config.js';
+        import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+        import { collection, addDoc, doc, getDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+
+        let currentUser = null;
+        let username = "Guest";
+
+        onAuthStateChanged(auth, async (user) => {
+            if (!user) {
+                window.location.href = "index.html";
+            } else {
+                currentUser = user;
+                try {
+                    const userDoc = await getDoc(doc(db, "users", user.uid));
+                    if (userDoc.exists()) {
+                        username = userDoc.data().username;
+                        document.getElementById('usernameDisplay').textContent = `🐒 Playing as: ${username}`;
+                    }
+                } catch (e) {
+                    console.error("Error fetching username", e);
+                }
+            }
+        });
+
+        const gameArea = document.getElementById('game-area');
+        const monkey = document.getElementById('monkey');
+        const scoreEl = document.getElementById('score');
+        const catchesEl = document.getElementById('catches');
+        const modal = document.getElementById('puzzle-modal');
+        const puzzleImg = document.getElementById('puzzle-img');
+        const puzzleAnswer = document.getElementById('puzzle-answer');
+        const puzzleSubmit = document.getElementById('puzzle-submit');
+        const puzzleSkip = document.getElementById('puzzle-skip');
+        const puzzleMsg = document.getElementById('puzzle-msg');
+        const gameOverScreen = document.getElementById('gameOverScreen');
+        const finalScore = document.getElementById('finalScore');
+        const restartBtn = document.getElementById('restartBtn');
+        const leaderboardBtn = document.getElementById('leaderboardBtn');
+
+        let score = 0, catches = 0, monkeyX = gameArea.clientWidth / 2;
+        let gameRunning = true;
+        let frozenUntil = 0;
+        let bananas = [];
+        let level = 1;
+
+        const MONKEY_SPEED = 35;
+        const BANANA_TYPES = [
+            { emoji: '🍌', type: 'normal', points: 10, effect: null },
+            { emoji: '🟡🍌', type: 'gold', points: 25, effect: null },
+            { emoji: '🧊🍌', type: 'frozen', points: 5, effect: 'freeze' },
+            { emoji: '🍂🍌', type: 'rotten', points: -15, effect: null }
+        ];
+
+        const BASE_SPAWN_INTERVAL = 1200;
+
+        function checkLevelComplete() {
+            if (catches >= 5) {
+                catches = 0;
+                catchesEl.textContent = catches;
+                level++;
+                openPuzzle();
+            }
+        }
+
+        function setMonkey(x) {
+            if (!gameRunning) return;
+            x = Math.max(0, Math.min(x, gameArea.clientWidth - 80));
+            monkeyX = x;
+            monkey.style.left = x + 'px';
+        }
+
+        document.addEventListener('keydown', e => {
+            if (e.key === 'ArrowLeft') setMonkey(monkeyX - MONKEY_SPEED);
+            if (e.key === 'ArrowRight') setMonkey(monkeyX + MONKEY_SPEED);
+        });
+
+        let touchX = null;
+        gameArea.addEventListener('touchstart', e => { touchX = e.touches[0].clientX; }, { passive: true });
+        gameArea.addEventListener('touchmove', e => {
+            if (touchX === null || !gameRunning) return;
+            const dx = e.touches[0].clientX - touchX;
+            setMonkey(monkeyX + dx);
+            touchX = e.touches[0].clientX;
+        }, { passive: true });
+
+        gameArea.addEventListener('mousemove', e => {
+            if (!gameRunning || !modal.classList.contains('hidden')) return;
+            const rect = gameArea.getBoundingClientRect();
+            setMonkey(e.clientX - rect.left - 40);
+        });
+
+        function spawnBanana() {
+            if (!gameRunning || !modal.classList.contains('hidden')) return;
+
+            const rand = Math.random();
+            const type = rand < 0.70 ? BANANA_TYPES[0] :
+                rand < 0.88 ? BANANA_TYPES[1] :
+                    rand < 0.95 ? BANANA_TYPES[2] : BANANA_TYPES[3];
+
+            const b = document.createElement('div');
+            b.className = 'banana';
+            b.innerText = type.emoji;
+            b.style.left = Math.random() * (gameArea.clientWidth - 80) + 40 + 'px';
+            b.style.top = '-80px';
+            gameArea.appendChild(b);
+
+            bananas.push({
+                el: b,
+                type: type.type,
+                points: type.points,
+                effect: type.effect
+            });
+        }
+
+        setInterval(spawnBanana, BASE_SPAWN_INTERVAL);
+
+        function flash(text, color = '#ffd900') {
+            const f = document.createElement('div');
+            f.className = 'flash';
+            f.textContent = text;
+            f.style.color = color;
+            f.style.left = monkey.style.left;
+            gameArea.appendChild(f);
+            setTimeout(() => f.remove(), 1000);
+        }
+
+        function loop() {
+            if (!gameRunning || !modal.classList.contains('hidden')) {
+                requestAnimationFrame(loop);
+                return;
+            }
+
+            const now = Date.now();
+            const speed = now < frozenUntil ? 0.7 : 2.4;
+
+            for (let i = bananas.length - 1; i >= 0; i--) {
+                const b = bananas[i];
+                let top = parseFloat(b.el.style.top) || 0;
+                top += speed;
+                b.el.style.top = top + 'px';
+
+                const br = b.el.getBoundingClientRect();
+                const mr = monkey.getBoundingClientRect();
+
+                if (br.bottom > mr.top && br.right > mr.left && br.left < mr.right) {
+                    b.el.remove();
+                    bananas.splice(i, 1);
+                    catches++;
+                    catchesEl.textContent = catches;
+
+                    if (b.type === 'normal' || b.type === 'gold') {
+                        score += b.points;
+                        flash('+' + b.points, '#ffd900');
+                    } else if (b.type === 'frozen') {
+                        frozenUntil = now + 7000;
+                        flash('SLOWED!', '#4fc3f7');
+                    } else if (b.type === 'rotten') {
+                        score += b.points;
+                        flash(b.points, '#ff6b6b');
+                    }
+
+                    scoreEl.textContent = score;
+
+                    if (score < -10) endGame();
+                    checkLevelComplete();
+                    continue;
+                }
+
+                if (top > gameArea.clientHeight) {
+                    b.el.remove();
+                    bananas.splice(i, 1);
+                }
+            }
+            requestAnimationFrame(loop);
+        }
+
+        async function openPuzzle() {
+            gameRunning = false;
+            try {
+                // Updated to fetch directly from API for client-side usage
+                // Note: This relies on the API supporting CORS or being permissive.
+                // If this fails, the catch block handles it.
+                const res = await fetch('https://marcconrad.com/uob/banana/api.php');
+                const data = await res.json();
+                puzzleImg.src = data.question;
+                modal.dataset.solution = data.solution;
+                modal.classList.remove('hidden');
+                puzzleAnswer.value = '';
+                puzzleAnswer.focus();
+            } catch (e) {
+                console.error("Puzzle fetch error:", e);
+                puzzleMsg.textContent = "Puzzle unavailable. Skipping...";
+                puzzleMsg.style.color = 'orange';
+                setTimeout(() => {
+                    modal.classList.add('hidden');
+                    gameRunning = true;
+                }, 1500);
+            }
+        }
+
+        puzzleSubmit.addEventListener('click', () => {
+            const val = parseInt(puzzleAnswer.value);
+            const sol = parseInt(modal.dataset.solution);
+            if (val === sol) {
+                score += 10;
+                scoreEl.textContent = score;
+                flash('+10 BONUS!', '#b6ff00');
+                modal.classList.add('hidden');
+                gameRunning = true;
+            } else {
+                puzzleMsg.textContent = "Wrong! Try again.";
+                puzzleMsg.style.color = 'red';
+            }
+        });
+
+        puzzleSkip.addEventListener('click', () => {
+            modal.classList.add('hidden');
+            gameRunning = true;
+        });
+
+        async function endGame() {
+            gameRunning = false;
+            gameOverScreen.classList.add('show');
+            finalScore.textContent = score;
+
+            // Save score to Firestore
+            if (currentUser) {
+                try {
+                    await addDoc(collection(db, "scores"), {
+                        uid: currentUser.uid,
+                        username: username,
+                        score: score,
+                        timestamp: new Date()
+                    });
+                    console.log("Score saved!");
+                    // Visual feedback for the user
+                    const saveMsg = document.createElement('div');
+                    saveMsg.textContent = "Score Saved to Database! 💾";
+                    saveMsg.style.cssText = "color: #bfa; margin-top: 10px; font-weight: bold;";
+                    gameOverScreen.appendChild(saveMsg);
+                } catch (e) {
+                    console.error("Error saving score: ", e);
+                    const errMsg = document.createElement('div');
+                    errMsg.textContent = "Error saving score. Check console.";
+                    errMsg.style.cssText = "color: #ff6b6b; margin-top: 10px; font-weight: bold;";
+                    gameOverScreen.appendChild(errMsg);
+                }
+            }
+        }
+
+        restartBtn.addEventListener('click', () => {
+            location.reload();
+        });
+
+        leaderboardBtn.addEventListener('click', () => {
+            window.location.href = 'home.html';
+        });
+
+        // Start loop
+        requestAnimationFrame(loop);
+
+    </script>
+</body>
+
+</html>
